@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "fastapi_tuto"
+version = "0.1.0"
+description = ""
+authors = ["le_woudar <lewoudar@gmail.com>"]
+license = "MIT"
+
+packages = [
+    { include = "pastebin" }
+]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+tortoise-orm = "^0.17.5"
+fastapi = {extras = ["all"], version = "^0.67.0"}
+Babel = "^2.9.1"
+bcrypt = "^3.2.0"
+Pygments = "^2.9.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.2.4"
+aerich = "^0.5.4"
+httpie = "^2.4.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
