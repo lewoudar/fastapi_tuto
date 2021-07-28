@@ -4,6 +4,7 @@
 htmlcov
 .env
 .python-version
+pastebin.db
 
 # byte-compiled / optimized
 __pycache__

@@ -21,7 +21,7 @@ TORTOISE_ORM = {
     'connections': {'default': settings.db_url},
     'apps': {
         'pastebin': {
-            'models': ['aerich.models'],
+            'models': ['aerich.models', 'pastebin.users.models'],
             'default_connection': 'default',
         }
     }

@@ -1,0 +1,17 @@
+-- upgrade --
+CREATE TABLE IF NOT EXISTS "aerich" (
+    "id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    "version" VARCHAR(255) NOT NULL,
+    "app" VARCHAR(20) NOT NULL,
+    "content" JSON NOT NULL
+);
+CREATE TABLE IF NOT EXISTS "user" (
+    "id" CHAR(36) NOT NULL  PRIMARY KEY,
+    "created_at" TIMESTAMP NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+    "firstname" VARCHAR(255) NOT NULL,
+    "lastname" VARCHAR(255) NOT NULL,
+    "password_hash" VARCHAR(255) NOT NULL,
+    "email" VARCHAR(255) NOT NULL,
+    "is_admin" INT NOT NULL  DEFAULT 0
+);
