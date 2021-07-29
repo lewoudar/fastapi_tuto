@@ -1,4 +1,5 @@
 from typing import Union
+
 from pydantic import BaseSettings, AnyUrl, PostgresDsn
 
 
@@ -7,8 +8,21 @@ class MysqlDsn(AnyUrl):
     user_required = True
 
 
-class SqliteDsn(AnyUrl):
-    allowed_schemes = {'sqlite'}
+class SqliteDsn(str):
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v: str):
+        if not isinstance(v, str):
+            raise TypeError('string required')
+        if not v.startswith('sqlite://'):
+            raise ValueError('Not a valid sqlite uri')
+        return cls(v)
+
+    def __repr__(self):
+        return f'SqliteDsn({super().__repr__()})'
 
 
 class Settings(BaseSettings):

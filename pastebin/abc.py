@@ -1,5 +1,5 @@
 """This module contains abstract base classes for the project."""
-from tortoise import Model, fields, Tortoise
+from tortoise import Model, fields
 
 
 class AbstractModel(Model):

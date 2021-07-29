@@ -18,8 +18,9 @@ class User(AbstractModel):
     id = fields.UUIDField(pk=True)
     firstname = fields.CharField(max_length=255, null=False)
     lastname = fields.CharField(max_length=255, null=False)
+    pseudo = fields.CharField(max_length=255, null=False, unique=True)
     password_hash = fields.CharField(max_length=255, null=False)
-    email = fields.CharField(max_length=255, null=False, validators=[email_validator])
+    email = fields.CharField(max_length=255, null=False, unique=True, validators=[email_validator])
     is_admin = fields.BooleanField(null=False, default=False)
 
     def set_password(self, password: str) -> None:
@@ -34,3 +35,6 @@ class User(AbstractModel):
 
     class Meta:
         table = 'user'
+
+    class PydanticMeta:
+        exclude = ['is_admin', 'updated_at', 'password_hash']

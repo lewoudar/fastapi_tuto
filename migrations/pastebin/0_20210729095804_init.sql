@@ -11,7 +11,8 @@ CREATE TABLE IF NOT EXISTS "user" (
     "updated_at" TIMESTAMP NOT NULL  DEFAULT CURRENT_TIMESTAMP,
     "firstname" VARCHAR(255) NOT NULL,
     "lastname" VARCHAR(255) NOT NULL,
+    "pseudo" VARCHAR(255) NOT NULL UNIQUE,
     "password_hash" VARCHAR(255) NOT NULL,
-    "email" VARCHAR(255) NOT NULL,
+    "email" VARCHAR(255) NOT NULL UNIQUE,
     "is_admin" INT NOT NULL  DEFAULT 0
 );
