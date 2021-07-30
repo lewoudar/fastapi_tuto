@@ -22,6 +22,7 @@ python-dotenv = "^0.19.0"
 pytest = "^6.2.4"
 aerich = "^0.5.4"
 httpie = "^2.4.0"
+httpx = "^0.18.2"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
