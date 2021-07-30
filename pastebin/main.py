@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.responses import ORJSONResponse
 from tortoise import Tortoise
 
 from .config import TORTOISE_ORM
@@ -17,6 +18,7 @@ async def close_tortoise():
 
 
 app = FastAPI(
+    default_response_class=ORJSONResponse,
     on_startup=[init_tortoise],
     on_shutdown=[close_tortoise]
 )
