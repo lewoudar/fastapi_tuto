@@ -51,7 +51,7 @@ async def get_users():
 
 
 @router.get(
-    '/{pseudo}',
+    '/{user_id}',
     response_model=UserOutput,
     responses={
         404: {
@@ -72,10 +72,8 @@ async def check_update_user_integrity(user_input: UserUpdate) -> UserUpdate:
     return user_input
 
 
-# In real applications you probably don't want to change user given a path parameter whose value can changed
-# but for simplicity here, we will just use that
 @router.patch(
-    '/{pseudo}',
+    '/{user_id}',
     response_model=UserOutput,
     responses={
         404: {
