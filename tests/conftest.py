@@ -12,7 +12,7 @@ async def create_users():
     await user.save()
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture()
 async def client() -> httpx.AsyncClient:
     # Hum... it seems like the startup events are not taken in account, at least for Tortoise
     # so it is necessary to initialize the test database here
@@ -24,6 +24,6 @@ async def client() -> httpx.AsyncClient:
     await Tortoise.close_connections()
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture()
 def anyio_backend():
     return 'asyncio'

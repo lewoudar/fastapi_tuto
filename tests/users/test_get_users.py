@@ -1,19 +1,8 @@
-from typing import Dict
-
-import pydantic
 import pytest
 
-from pastebin.users.schemas import UserOutput
+from tests.helpers import is_valid_user
 
 pytestmark = pytest.mark.anyio
-
-
-def is_valid_user(user: Dict[str, str]) -> bool:
-    try:
-        UserOutput(**user)
-        return True
-    except pydantic.ValidationError:
-        return False
 
 
 async def test_returns_list_of_users(client):
