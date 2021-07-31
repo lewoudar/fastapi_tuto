@@ -1,6 +1,9 @@
+from typing import List
+
 from fastapi import APIRouter, Response, Depends, HTTPException
 
 from pastebin.schemas import HttpError
+from pastebin.dependencies import get_db_user
 from .models import User
 from .schemas import UserCreate, UserOutput
 
@@ -37,4 +40,23 @@ async def create_user(response: Response, user_input: UserCreate = Depends(check
     await user.save()
 
     response.status_code = 201
+    return user
+
+
+@router.get('/', response_model=List[UserOutput])
+async def get_users():
+    return await User.all()
+
+
+@router.get(
+    '/{pseudo}',
+    response_model=UserOutput,
+    responses={
+        404: {
+            'description': 'User not found',
+            'model': HttpError
+        }
+    }
+)
+async def get_user(user: User = Depends(get_db_user)):
     return user
