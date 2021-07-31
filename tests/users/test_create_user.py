@@ -1,6 +1,7 @@
 import pytest
 
-from tests.helpers import is_uuid, is_datetime
+from pastebin.users.models import User
+from tests.helpers import is_valid_user
 
 pytestmark = pytest.mark.anyio
 
@@ -98,8 +99,12 @@ async def test_creates_user_and_returns_it_when_passing_valid_input(client):
     response = await client.post('/users/', json=payload)
 
     assert 201 == response.status_code
-    data = response.json()
-    assert is_datetime(data.pop('created_at'))
-    assert is_uuid(data.pop('id'))
-    payload.pop('password')
-    assert data == payload
+
+    user = await User.filter(pseudo='Kevin').get_or_none()
+    assert user is not None
+    password = payload.pop('password')
+    for key, value in payload.items():
+        assert getattr(user, key) == value
+
+    assert user.check_password(password)
+    assert is_valid_user(response.json())
