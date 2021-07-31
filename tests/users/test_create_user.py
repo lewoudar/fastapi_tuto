@@ -23,21 +23,20 @@ async def test_returns_422_error_when_missing_field_in_input(client, field):
     assert message == response.json()
 
 
-@pytest.mark.parametrize('field', ['firstname', 'lastname', 'pseudo', 'password'])
-async def test_returns_422_error_when_field_does_not_have_the_correct_type(client, field):
+async def test_returns_422_error_when_field_does_not_have_the_correct_type(client):
     payload = {
-        'firstname': 'Bob',
-        'lastname': 'Bar',
-        'pseudo': 'Bob',
+        'firstname': 42,
+        'lastname': 42,
+        'pseudo': 42,
         'email': 'hello@bar.com',
-        'password': 'oops',
-        **{field: 42}
+        'password': 42
     }
     response = await client.post('/users/', json=payload)
 
     assert 422 == response.status_code
-    message = {'detail': [{'loc': ['body', field], 'msg': 'str type expected', 'type': 'type_error.str'}]}
-    assert message == response.json()
+    fields = ['firstname', 'lastname', 'pseudo', 'password']
+    errors = [{'loc': ['body', field], 'msg': 'str type expected', 'type': 'type_error.str'} for field in fields]
+    assert {'detail': errors} == response.json()
 
 
 @pytest.mark.parametrize('email', [42, 'foo'])
@@ -58,6 +57,27 @@ async def test_returns_422_when_email_is_not_valid(client, email):
         }]
     }
     assert message == response.json()
+
+
+async def test_returns_422_error_when_field_does_not_have_the_correct_length(client):
+    payload = {
+        'firstname': '',
+        'lastname': 'B',
+        'pseudo': 'B',
+        'email': 'foo@bar.com',
+        'password': ''
+    }
+    response = await client.post('/users/', json=payload)
+
+    assert 422 == response.status_code
+    errors = []
+    for field, min_length in [('firstname', 1), ('lastname', 2), ('pseudo', 2), ('password', 1)]:
+        errors.append({
+            'loc': ['body', field],
+            'msg': f'{field} must have a minimum length of {min_length}',
+            'type': 'value_error'
+        })
+    assert {'detail': errors} == response.json()
 
 
 async def test_returns_409_error_when_pseudo_already_exists(client):
