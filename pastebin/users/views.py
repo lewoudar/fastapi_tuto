@@ -1,9 +1,10 @@
 from typing import List
 
-from fastapi import APIRouter, Response, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import Response
 
-from pastebin.schemas import HttpError
 from pastebin.dependencies import get_db_user
+from pastebin.schemas import HttpError
 from .models import User
 from .schemas import UserCreate, UserUpdate, UserOutput
 
@@ -27,6 +28,7 @@ async def check_create_user_integrity(user_input: UserCreate) -> UserCreate:
     '/',
     response_model=UserOutput,
     status_code=201,
+    description='Creates a user',
     responses={
         409: {
             'description': 'Conflict with email or pseudo name',
@@ -34,18 +36,16 @@ async def check_create_user_integrity(user_input: UserCreate) -> UserCreate:
         }
     }
 )
-async def create_user(response: Response, user_input: UserCreate = Depends(check_create_user_integrity)):
+async def create_user(user_input: UserCreate = Depends(check_create_user_integrity)):
     user_dict = user_input.dict()
     password = user_dict.pop('password')
     user = User(**user_dict)
     user.set_password(password)
     await user.save()
-
-    response.status_code = 201
     return user
 
 
-@router.get('/', response_model=List[UserOutput])
+@router.get('/', description='Gets a list of users', response_model=List[UserOutput])
 async def get_users():
     return await User.all()
 
@@ -53,6 +53,7 @@ async def get_users():
 @router.get(
     '/{user_id}',
     response_model=UserOutput,
+    description='Gets a user given its id',
     responses={
         404: {
             'description': 'User not found',
@@ -75,6 +76,7 @@ async def check_update_user_integrity(user_input: UserUpdate) -> UserUpdate:
 @router.patch(
     '/{user_id}',
     response_model=UserOutput,
+    description='Updates user information either partially or completely',
     responses={
         404: {
             'description': 'User not found',
@@ -96,3 +98,22 @@ async def update_user(user: UserUpdate = Depends(check_update_user_integrity), d
 
     await db_user.save()
     return db_user
+
+
+@router.delete(
+    '/{user_id}',
+    status_code=204,
+    response_class=Response,
+    description='Deletes a user',
+    responses={
+        204: {
+            'description': 'User deleted'
+        },
+        404: {
+            'description': 'User not found',
+            'model': HttpError
+        }
+    }
+)
+async def delete_user(user: User = Depends(get_db_user)):
+    await user.delete()
