@@ -1,8 +1,12 @@
+from typing import List
+
 from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 from tortoise import Tortoise
 
 from .config import TORTOISE_ORM
+from .schemas import LanguageSchema
+from .snippets.models import Language
 from .users import views
 
 
@@ -23,3 +27,8 @@ app = FastAPI(
     on_shutdown=[close_tortoise]
 )
 app.include_router(views.router)
+
+
+@app.get('/languages', response_model=List[LanguageSchema], tags=['lang'])
+async def get_languages():
+    return await Language.all()
