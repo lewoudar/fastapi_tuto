@@ -1,3 +1,5 @@
+import typing
+
 import bcrypt
 import pydantic
 from tortoise import fields
@@ -5,6 +7,9 @@ from tortoise.exceptions import ValidationError
 from tortoise.validators import MinLengthValidator
 
 from pastebin.abc import AbstractModel
+
+if typing.TYPE_CHECKING:
+    from pastebin.snippets.models import Snippet
 
 
 def email_validator(value: str) -> None:
@@ -16,13 +21,13 @@ def email_validator(value: str) -> None:
 
 
 class User(AbstractModel):
-    id = fields.UUIDField(pk=True)
     firstname = fields.CharField(max_length=255, null=False, validators=[MinLengthValidator(1)])
     lastname = fields.CharField(max_length=255, null=False, validators=[MinLengthValidator(2)])
     pseudo = fields.CharField(max_length=255, null=False, unique=True, validators=[MinLengthValidator(2)])
     password_hash = fields.CharField(max_length=255, null=False)
     email = fields.CharField(max_length=255, null=False, unique=True, validators=[email_validator])
     is_admin = fields.BooleanField(null=False, default=False)
+    snippets: fields.ReverseRelation['Snippet']
 
     def set_password(self, password: str) -> None:
         _hash = bcrypt.hashpw(password.encode('utf8'), bcrypt.gensalt())
@@ -36,6 +41,3 @@ class User(AbstractModel):
 
     class Meta:
         table = 'user'
-
-    class PydanticMeta:
-        exclude = ['is_admin', 'updated_at', 'password_hash']
