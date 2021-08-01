@@ -1,24 +1,24 @@
 import pydantic
 import pytest
 
-from pastebin.schemas import LanguageSchema
+from pastebin.schemas import StyleSchema
 
 
-def is_valid_language(item: dict) -> bool:
+def is_valid_style(item: dict) -> bool:
     try:
-        LanguageSchema.parse_obj(item)
+        StyleSchema.parse_obj(item)
         return True
     except pydantic.ValidationError:
         return False
 
 
 @pytest.mark.anyio
-async def test_returns_languages(client):
-    response = await client.get('/languages')
+async def test_returns_styles(client):
+    response = await client.get('/styles')
 
     assert 200 == response.status_code
 
     data = response.json()
     assert len(data) > 0
     for item in response.json():
-        assert is_valid_language(item)
+        assert is_valid_style(item)

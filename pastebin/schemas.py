@@ -1,13 +1,18 @@
 import uuid
-from datetime import datetime
 
 from pydantic import BaseModel, Field
 
 
-class LanguageSchema(BaseModel):
+class BaseLanguage(BaseModel):
     id: uuid.UUID
-    name: str = Field(..., example='Python', description='Language name')
-    created_at: datetime
+
+
+class LanguageSchema(BaseLanguage):
+    name: str = Field(..., example='Python', description='language name')
+
+
+class StyleSchema(BaseLanguage):
+    name: str = Field(..., example='monokai', description='snippet display style')
 
 
 class HttpError(BaseModel):

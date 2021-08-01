@@ -5,7 +5,7 @@ import pytest
 from tortoise import Tortoise
 
 from pastebin.main import app
-from pastebin.snippets.models import Language
+from pastebin.snippets.models import Language, Style
 from pastebin.users.models import User
 
 
@@ -25,9 +25,15 @@ async def create_languages() -> None:
         await Language.create(name=language)
 
 
+async def create_styles() -> None:
+    for style in ['monokai', 'friendly']:
+        await Style.create(name=style)
+
+
 async def create_models(default_user_id: str) -> None:
     await create_users(default_user_id)
     await create_languages()
+    await create_styles()
 
 
 @pytest.fixture()

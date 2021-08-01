@@ -5,8 +5,8 @@ from fastapi.responses import ORJSONResponse
 from tortoise import Tortoise
 
 from .config import TORTOISE_ORM
-from .schemas import LanguageSchema
-from .snippets.models import Language
+from .schemas import LanguageSchema, StyleSchema
+from .snippets.models import Language, Style
 from .users import views
 
 
@@ -32,3 +32,8 @@ app.include_router(views.router)
 @app.get('/languages', response_model=List[LanguageSchema], tags=['lang'])
 async def get_languages():
     return await Language.all()
+
+
+@app.get('/styles', response_model=List[StyleSchema], tags=['lang'])
+async def get_styles():
+    return await Style.all()
