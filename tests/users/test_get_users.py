@@ -27,7 +27,7 @@ async def test_returns_404_error_when_user_id_is_unknown(client):
     response = await client.get(f'/users/{user_id}')
 
     assert 404 == response.status_code
-    assert {'detail': f'user with id {user_id} not found'} == response.json()
+    assert {'detail': f'no user with id {user_id} found'} == response.json()
 
 
 async def test_returns_422_error_when_user_id_is_not_a_uuid(client):

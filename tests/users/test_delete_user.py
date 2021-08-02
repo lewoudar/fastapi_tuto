@@ -12,7 +12,7 @@ async def test_should_return_404_error_when_user_id_is_unknown(client):
     response = await client.delete(f'/users/{user_id}')
 
     assert 404 == response.status_code
-    assert {'detail': f'user with id {user_id} not found'} == response.json()
+    assert {'detail': f'no user with id {user_id} found'} == response.json()
 
 
 async def test_should_delete_user_when_given_correct_user_id(client, default_user_id):
