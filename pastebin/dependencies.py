@@ -10,6 +10,6 @@ async def get_db_user(
 ) -> User:
     user = await User.filter(pk=str(user_id)).get_or_none()
     if user is None:
-        raise HTTPException(status_code=404, detail=f'user with id {user_id} not found')
+        raise HTTPException(status_code=404, detail=f'no user with id {user_id} found')
 
     return user

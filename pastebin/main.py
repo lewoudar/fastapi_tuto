@@ -5,9 +5,11 @@ from fastapi.responses import ORJSONResponse
 from tortoise import Tortoise
 
 from .config import TORTOISE_ORM
+from .exceptions import exception_handlers
 from .schemas import LanguageSchema, StyleSchema
 from .snippets.models import Language, Style
-from .users import views
+from .snippets.views import router as snippet_router
+from .users.views import router as user_router
 
 
 # tortoise uses decorator on_event which is now deprecated by starlette
@@ -23,17 +25,19 @@ async def close_tortoise():
 
 app = FastAPI(
     default_response_class=ORJSONResponse,
+    exception_handlers=exception_handlers,
     on_startup=[init_tortoise],
     on_shutdown=[close_tortoise]
 )
-app.include_router(views.router)
+app.include_router(user_router)
+app.include_router(snippet_router)
 
 
-@app.get('/languages', response_model=List[LanguageSchema], tags=['lang'])
+@app.get('/languages', response_model=List[LanguageSchema], tags=['display'])
 async def get_languages():
     return await Language.all()
 
 
-@app.get('/styles', response_model=List[StyleSchema], tags=['lang'])
+@app.get('/styles', response_model=List[StyleSchema], tags=['display'])
 async def get_styles():
     return await Style.all()
