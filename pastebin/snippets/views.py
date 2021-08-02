@@ -1,6 +1,7 @@
-from typing import List, Dict
+from typing import List, Dict, Any
 
 from fastapi import Depends, APIRouter
+from fastapi.encoders import jsonable_encoder
 
 from pastebin.dependencies import get_db_user
 from pastebin.exceptions import SnippetError
@@ -34,4 +35,29 @@ async def create_snippet(snippet: SnippetCreate, user: User = Depends(get_db_use
         style=style,
         user=user
     )
-    return {**snippet.dict(), 'id': db_snippet.id}
+    return {**snippet.dict(), 'id': db_snippet.id, 'created_at': db_snippet.created_at}
+
+
+def get_serialized_snippets(snippets: List[Snippet]) -> List[Dict[str, Any]]:
+    return jsonable_encoder([
+        {
+            'id': snippet.id,
+            'title': snippet.title,
+            'code': snippet.code,
+            'language': snippet.language.name,
+            'style': snippet.style.name,
+            'created_at': snippet.created_at
+        } for snippet in snippets
+    ])
+
+
+@user_router.get('/{user_id}/snippets', response_model=List[SnippetOutput], tags=['snippets'])
+async def get_user_snippets(user: User = Depends(get_db_user)):
+    snippets = await Snippet.filter(user_id=user.id).prefetch_related('language', 'style')
+    return get_serialized_snippets(snippets)
+
+
+@router.get('/', response_model=List[SnippetOutput])
+async def get_snippets():
+    snippets = await Snippet.all().prefetch_related('language', 'style')
+    return get_serialized_snippets(snippets)

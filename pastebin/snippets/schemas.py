@@ -1,3 +1,4 @@
+import datetime
 import uuid
 
 from pydantic import BaseModel, Field
@@ -15,4 +16,5 @@ class SnippetCreate(BaseModel):
 
 
 class SnippetOutput(SnippetCreate):
-    id: uuid.UUID = Field(..., description='snippet id', example='')
+    id: uuid.UUID = Field(..., description='snippet id')
+    created_at: datetime.datetime = Field(..., description='snippet creation date')

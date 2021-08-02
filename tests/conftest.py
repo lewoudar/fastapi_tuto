@@ -7,6 +7,7 @@ from tortoise import Tortoise
 from pastebin.main import app
 from pastebin.snippets.models import Language, Style
 from pastebin.users.models import User
+from tests.helpers import create_snippet
 
 
 @pytest.fixture(scope='session')
@@ -15,9 +16,12 @@ def default_user_id() -> str:
 
 
 async def create_users(default_user_id: str) -> None:
-    user = User(id=default_user_id, firstname='Bob', lastname='Fish', pseudo='Bob', email='bob@foo.com')
-    user.set_password('hell')
-    await user.save()
+    user_1 = User(id=default_user_id, firstname='Bob', lastname='Fish', pseudo='Bob', email='bob@foo.com')
+    user_1.set_password('hell')
+    await user_1.save()
+    user_2 = User(firstname='Bobby', lastname='Fish', pseudo='fisher', email='fisher@foo.com')
+    user_2.set_password('foo')
+    await user_2.save()
 
 
 async def create_languages() -> None:
@@ -30,10 +34,19 @@ async def create_styles() -> None:
         await Style.create(name=style)
 
 
+async def create_snippets(user_id: str):
+    for title in ['test 1', 'test 2']:
+        await create_snippet(user_id, title=title)
+
+    user = await User.all().order_by('-id').first()
+    await create_snippet(user.id, title='test 3')
+
+
 async def create_models(default_user_id: str) -> None:
     await create_users(default_user_id)
     await create_languages()
     await create_styles()
+    await create_snippets(default_user_id)
 
 
 @pytest.fixture()
