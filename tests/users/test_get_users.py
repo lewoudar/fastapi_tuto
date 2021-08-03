@@ -15,7 +15,7 @@ async def test_returns_list_of_users(client):
         assert is_valid_user(user)
 
 
-async def test_returns_a_single_user_given_its_pseudo(client, default_user_id):
+async def test_returns_a_single_user_given_its_id(client, default_user_id):
     response = await client.get(f'/users/{default_user_id}')
 
     assert 200 == response.status_code

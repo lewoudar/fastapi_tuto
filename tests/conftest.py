@@ -38,7 +38,7 @@ async def create_snippets(user_id: str):
     for title in ['test 1', 'test 2']:
         await create_snippet(user_id, title=title)
 
-    user = await User.all().order_by('-id').first()
+    user = await User.filter(pseudo='fisher').get()
     await create_snippet(user.id, title='test 3')
 
 
