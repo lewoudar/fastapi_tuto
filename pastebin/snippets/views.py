@@ -19,6 +19,18 @@ from .schemas import SnippetCreate, SnippetOutput, SnippetUpdate
 router = APIRouter(prefix='/snippets', tags=['snippets'])
 
 
+def get_snippet_info_to_display(snippet: Snippet) -> Dict[str, Any]:
+    return {
+        'id': snippet.id,
+        'title': snippet.title,
+        'code': snippet.code,
+        'print_line_number': snippet.print_line_number,
+        'language': snippet.language.name,
+        'style': snippet.style.name,
+        'created_at': snippet.created_at
+    }
+
+
 @user_router.post('/{user_id}/snippets', tags=['snippets'], status_code=201, response_model=SnippetOutput)
 async def create_snippet(snippet: SnippetCreate, user: User = Depends(get_db_user)):
     errors: List[Dict[str, str]] = []
@@ -41,19 +53,7 @@ async def create_snippet(snippet: SnippetCreate, user: User = Depends(get_db_use
         style=style,
         user=user
     )
-    return {**snippet.dict(), 'id': db_snippet.id, 'created_at': db_snippet.created_at}
-
-
-def get_snippet_info_to_display(snippet: Snippet) -> Dict[str, Any]:
-    return {
-        'id': snippet.id,
-        'title': snippet.title,
-        'code': snippet.code,
-        'print_line_number': snippet.print_line_number,
-        'language': snippet.language.name,
-        'style': snippet.style.name,
-        'created_at': snippet.created_at
-    }
+    return jsonable_encoder(get_snippet_info_to_display(db_snippet))
 
 
 def get_serialized_snippets(snippets: List[Snippet]) -> List[Dict[str, Any]]:
