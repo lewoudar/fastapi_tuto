@@ -1,7 +1,9 @@
+from pathlib import Path
 from typing import List
 
 from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
+from fastapi.staticfiles import StaticFiles
 from tortoise import Tortoise
 
 from .config import TORTOISE_ORM
@@ -31,6 +33,9 @@ app = FastAPI(
 )
 app.include_router(user_router)
 app.include_router(snippet_router)
+
+static_dir = Path(__file__).parent / 'static'
+app.mount('/static', StaticFiles(directory=f'{static_dir}'), name='static')
 
 
 @app.get('/languages', response_model=List[LanguageSchema], tags=['display'])

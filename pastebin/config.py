@@ -1,5 +1,7 @@
+from pathlib import Path
 from typing import Union
 
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseSettings, AnyUrl, PostgresDsn
 
 
@@ -40,3 +42,6 @@ TORTOISE_ORM = {
         }
     }
 }
+
+templates_dir = Path(__file__).parent / 'templates'
+templates = Jinja2Templates(directory=f'{templates_dir}')

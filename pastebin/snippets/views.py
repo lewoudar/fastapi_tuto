@@ -1,9 +1,13 @@
 from typing import List, Dict, Any
 
-from fastapi import Depends, APIRouter
+from fastapi import Depends, APIRouter, Request
 from fastapi.encoders import jsonable_encoder
-from fastapi.responses import Response
+from fastapi.responses import Response, HTMLResponse
+from pygments import highlight
+from pygments.formatters.html import HtmlFormatter
+from pygments.lexers import get_lexer_by_name
 
+from pastebin.config import templates
 from pastebin.dependencies import get_db_user, get_db_snippet
 from pastebin.exceptions import SnippetError
 from pastebin.schemas import HttpError
@@ -80,6 +84,27 @@ async def get_snippets():
 )
 async def get_snippet(snippet: Snippet = Depends(get_db_snippet)):
     return jsonable_encoder(get_snippet_info_to_display(snippet))
+
+
+@router.get(
+    '/{snippet_id}/highlight',
+    response_class=HTMLResponse,
+    responses={
+        404: {
+            'description': 'Snippet not found',
+            'model': HttpError
+        }
+    }
+)
+async def get_highlighted_snippet(request: Request, snippet: Snippet = Depends(get_db_snippet)):
+    lexer = get_lexer_by_name(snippet.language.name)
+    formatter = HtmlFormatter(title=snippet.title, style=snippet.style.name, linenos=snippet.print_line_number)
+    context = {
+        'request': request,
+        'title': snippet.title,
+        'highlighted': highlight(snippet.code, lexer, formatter)
+    }
+    return templates.TemplateResponse('highlight.jinja2', context)
 
 
 @router.patch(
