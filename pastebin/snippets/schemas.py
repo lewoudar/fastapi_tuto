@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 title_field = partial(Field, description='snippet description', example='my super snippet', min_length=1)
 code_field = partial(Field, description='snippet code', example="print('Hello world')", min_length=1)
 language_field = partial(Field, description='snippet language', example='python')
-style_field = partial(Field, description='snippet style when displaying code in html')
+style_field = partial(Field, description='snippet style when displaying code in html', example='monokai')
 
 
 class SnippetCreate(BaseModel):
