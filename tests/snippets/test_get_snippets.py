@@ -37,7 +37,7 @@ class TestGetSingleSnippet:
         assert 404 == response.status_code
         assert {'detail': f'no snippet with id {snippet_id} found'} == response.json()
 
-    async def test_returns_422_error_when_snippet_id_is_not_an_uuid(self, client):
+    async def test_returns_422_error_when_snippet_id_is_not_a_uuid(self, client):
         response = await client.get('/snippets/43')
 
         assert 422 == response.status_code

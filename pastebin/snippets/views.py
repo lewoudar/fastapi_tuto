@@ -5,10 +5,11 @@ from fastapi.encoders import jsonable_encoder
 
 from pastebin.dependencies import get_db_user, get_db_snippet
 from pastebin.exceptions import SnippetError
+from pastebin.schemas import HttpError
 from pastebin.users.models import User
 from pastebin.users.views import router as user_router
 from .models import Language, Style, Snippet
-from .schemas import SnippetCreate, SnippetOutput
+from .schemas import SnippetCreate, SnippetOutput, SnippetUpdate
 
 router = APIRouter(prefix='/snippets', tags=['snippets'])
 
@@ -43,6 +44,7 @@ def get_snippet_info_to_display(snippet: Snippet) -> Dict[str, Any]:
         'id': snippet.id,
         'title': snippet.title,
         'code': snippet.code,
+        'print_line_number': snippet.print_line_number,
         'language': snippet.language.name,
         'style': snippet.style.name,
         'created_at': snippet.created_at
@@ -65,6 +67,53 @@ async def get_snippets():
     return get_serialized_snippets(snippets)
 
 
-@router.get('/{snippet_id}', response_model=SnippetOutput)
+@router.get(
+    '/{snippet_id}',
+    response_model=SnippetOutput,
+    responses={
+        404: {
+            'description': 'Snippet not found',
+            'model': HttpError
+        }
+    }
+)
 async def get_snippet(snippet: Snippet = Depends(get_db_snippet)):
     return jsonable_encoder(get_snippet_info_to_display(snippet))
+
+
+@router.patch(
+    '/{snippet_id}',
+    response_model=SnippetOutput,
+    responses={
+        404: {
+            'description': 'Snippet not found',
+            'model': HttpError
+        }
+    }
+)
+async def update_snippet(snippet: SnippetUpdate, db_snippet: Snippet = Depends(get_db_snippet)):
+    errors: List[Dict[str, str]] = []
+    snippet_dict = snippet.dict(exclude_unset=True)
+    if snippet.language is not None:
+        language = await Language.filter(name__iexact=snippet.language).get_or_none()
+        if language is None:
+            errors.append({'model': 'language', 'value': snippet.language})
+        else:
+            snippet_dict['language'] = language
+
+    if snippet.style is not None:
+        style = await Style.filter(name__iexact=snippet.style).get_or_none()
+        if style is None:
+            errors.append({'model': 'style', 'value': snippet.style})
+        else:
+            snippet_dict['style'] = style
+
+    if errors:
+        raise SnippetError(errors=errors)
+
+    for key, value in snippet_dict.items():
+        setattr(db_snippet, key, value)
+    await db_snippet.save()
+    await db_snippet.fetch_related('language', 'style')
+
+    return jsonable_encoder(get_snippet_info_to_display(db_snippet))
