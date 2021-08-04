@@ -2,6 +2,7 @@ from typing import List, Dict, Any
 
 from fastapi import Depends, APIRouter
 from fastapi.encoders import jsonable_encoder
+from fastapi.responses import Response
 
 from pastebin.dependencies import get_db_user, get_db_snippet
 from pastebin.exceptions import SnippetError
@@ -117,3 +118,21 @@ async def update_snippet(snippet: SnippetUpdate, db_snippet: Snippet = Depends(g
     await db_snippet.fetch_related('language', 'style')
 
     return jsonable_encoder(get_snippet_info_to_display(db_snippet))
+
+
+@router.delete(
+    '/{snippet_id}',
+    response_class=Response,
+    status_code=204,
+    responses={
+        204: {
+            'description': 'Snippet deleted'
+        },
+        404: {
+            'description': 'Snippet not found',
+            'model': HttpError
+        }
+    }
+)
+async def delete_snippet(snippet: Snippet = Depends(get_db_snippet)):
+    await snippet.delete()

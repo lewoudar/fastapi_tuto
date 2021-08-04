@@ -2,6 +2,7 @@ import uuid
 
 import pytest
 
+from pastebin.snippets.models import Snippet
 from tests.helpers import create_snippet, is_valid_snippet
 
 pytestmark = pytest.mark.anyio
@@ -98,10 +99,17 @@ async def test_should_return_422_error_when_language_or_style_is_unknown(client,
 ])
 async def test_should_update_snippet_given_correct_input(client, default_user_id, payload):
     snippet = await create_snippet(default_user_id)
+    snippet_id = str(snippet.id)
     response = await client.patch(f'/snippets/{snippet.id}', json=payload)
 
     assert 200 == response.status_code
     data = response.json()
     assert is_valid_snippet(data)
+
+    snippet = await Snippet.filter(pk=snippet_id).get().prefetch_related('language', 'style')
     for key, value in payload.items():
         assert data[key] == value
+        if key in ['language', 'style']:
+            assert getattr(snippet, key).name == value
+        else:
+            assert getattr(snippet, key) == value
