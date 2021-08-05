@@ -2,6 +2,7 @@ from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from pastebin.config import PAGINATION_HEADERS
 from pastebin.dependencies import get_db_user, Pagination
 from pastebin.helpers import prepare_response
 from pastebin.schemas import HttpError
@@ -45,7 +46,12 @@ async def create_user(user_input: UserCreate = Depends(check_create_user_integri
     return user
 
 
-@router.get('/', description='Gets a list of users', response_model=List[UserOutput])
+@router.get(
+    '/',
+    description='Gets a list of users',
+    response_model=List[UserOutput],
+    responses={200: PAGINATION_HEADERS}
+)
 async def get_users(request: Request, response: Response, pagination: Pagination = Depends()):
     return await prepare_response(request, response, User, pagination.page, pagination.page_size)
 
@@ -105,10 +111,8 @@ async def update_user(user: UserUpdate = Depends(check_update_user_integrity), d
     status_code=204,
     response_class=Response,
     description='Deletes a user',
+    response_description='User deleted',
     responses={
-        204: {
-            'description': 'User deleted'
-        },
         404: {
             'description': 'User not found',
             'model': HttpError

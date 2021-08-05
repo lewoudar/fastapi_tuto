@@ -7,6 +7,7 @@ from pygments import highlight
 from pygments.formatters.html import HtmlFormatter
 from pygments.lexers import get_lexer_by_name
 
+from pastebin.config import PAGINATION_HEADERS
 from pastebin.config import templates
 from pastebin.dependencies import get_db_user, get_db_snippet, Pagination
 from pastebin.exceptions import SnippetError
@@ -61,7 +62,12 @@ def get_serialized_snippets(snippets: List[Snippet]) -> List[Dict[str, Any]]:
     return jsonable_encoder([get_snippet_info_to_display(snippet) for snippet in snippets])
 
 
-@user_router.get('/{user_id}/snippets', response_model=List[SnippetOutput], tags=['snippets'])
+@user_router.get(
+    '/{user_id}/snippets',
+    response_model=List[SnippetOutput],
+    tags=['snippets'],
+    responses={200: PAGINATION_HEADERS}
+)
 async def get_user_snippets(
         request: Request,
         response: Response,
@@ -76,7 +82,7 @@ async def get_user_snippets(
     return get_serialized_snippets(cast(List[Snippet], snippets))
 
 
-@router.get('/', response_model=List[SnippetOutput])
+@router.get('/', response_model=List[SnippetOutput], responses={200: PAGINATION_HEADERS})
 async def get_snippets(request: Request, response: Response, pagination: Pagination = Depends()):
     to_prefetch = ['language', 'style']
     snippets = await prepare_response(
@@ -162,10 +168,8 @@ async def update_snippet(snippet: SnippetUpdate, db_snippet: Snippet = Depends(g
     '/{snippet_id}',
     response_class=Response,
     status_code=204,
+    response_description='Snippet deleted',
     responses={
-        204: {
-            'description': 'Snippet deleted'
-        },
         404: {
             'description': 'Snippet not found',
             'model': HttpError

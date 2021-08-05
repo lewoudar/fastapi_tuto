@@ -43,5 +43,32 @@ TORTOISE_ORM = {
     }
 }
 
+PAGINATION_HEADERS = {
+    'headers': {
+        'X-Previous-Page': {
+            'schema': {
+                'type': 'string',
+                'format': 'url',
+                'example': 'https://server.com?page=1&page_size=30'
+            },
+            'description': (
+                'The url where to find previous items relative to the current data set. An empty value means there is'
+                'no previous item.'
+            )
+        },
+        'X-Next-Page': {
+            'schema': {
+                'type': 'string',
+                'format': 'url',
+                'example': 'https://server.com?page=1&page_size=30'
+            },
+            'description': (
+                'The url where to find previous items relative to the current data set. An empty value means there is'
+                'no next item.'
+            )
+        }
+    }
+}
+
 templates_dir = Path(__file__).parent / 'templates'
 templates = Jinja2Templates(directory=f'{templates_dir}')
