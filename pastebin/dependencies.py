@@ -31,7 +31,7 @@ class Pagination:
     def __init__(
             self,
             page: int = Query(1, description='number of the page to fetch', ge=1),
-            page_size: int = Query(50, description='number of items per page', gt=0, le=100)
+            page_size: int = Query(50, description='number of items per page', ge=1, le=100)
     ):
         self.page = page
         self.page_size = page_size

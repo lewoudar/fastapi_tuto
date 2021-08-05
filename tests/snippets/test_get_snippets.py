@@ -19,7 +19,7 @@ class TestGetUserSnippets:
 
     @pytest.mark.parametrize(('page_size', 'message', 'error_type', 'context_value'), [
         (101, 'ensure this value is less than or equal to 100', 'value_error.number.not_le', 100),
-        (0, 'ensure this value is greater than 0', 'value_error.number.not_gt', 0)
+        (0, 'ensure this value is greater than or equal to 1', 'value_error.number.not_ge', 1)
     ])
     async def test_should_return_422_error_when_pagination_params_have_invalid_value(
             self, client, default_user_id, page_size, message, error_type, context_value
@@ -72,7 +72,7 @@ class TestGetSnippets:
 
     @pytest.mark.parametrize(('page_size', 'message', 'error_type', 'context_value'), [
         (101, 'ensure this value is less than or equal to 100', 'value_error.number.not_le', 100),
-        (0, 'ensure this value is greater than 0', 'value_error.number.not_gt', 0)
+        (0, 'ensure this value is greater than or equal to 1', 'value_error.number.not_ge', 1)
     ])
     async def test_should_return_422_error_when_pagination_params_have_invalid_value(
             self, client, page_size, message, error_type, context_value
