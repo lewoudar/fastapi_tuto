@@ -1,9 +1,9 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from pastebin.dependencies import get_db_user
+from pastebin.dependencies import get_db_user, Pagination
+from pastebin.helpers import prepare_response
 from pastebin.schemas import HttpError
 from .models import User
 from .schemas import UserCreate, UserUpdate, UserOutput
@@ -46,8 +46,8 @@ async def create_user(user_input: UserCreate = Depends(check_create_user_integri
 
 
 @router.get('/', description='Gets a list of users', response_model=List[UserOutput])
-async def get_users():
-    return await User.all()
+async def get_users(request: Request, response: Response, pagination: Pagination = Depends()):
+    return await prepare_response(request, response, User, pagination.page, pagination.page_size)
 
 
 @router.get(

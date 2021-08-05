@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, cast
 
 from fastapi import Depends, APIRouter, Request
 from fastapi.encoders import jsonable_encoder
@@ -8,13 +8,14 @@ from pygments.formatters.html import HtmlFormatter
 from pygments.lexers import get_lexer_by_name
 
 from pastebin.config import templates
-from pastebin.dependencies import get_db_user, get_db_snippet
+from pastebin.dependencies import get_db_user, get_db_snippet, Pagination
 from pastebin.exceptions import SnippetError
 from pastebin.schemas import HttpError
 from pastebin.users.models import User
 from pastebin.users.views import router as user_router
 from .models import Language, Style, Snippet
 from .schemas import SnippetCreate, SnippetOutput, SnippetUpdate
+from ..helpers import prepare_response
 
 router = APIRouter(prefix='/snippets', tags=['snippets'])
 
@@ -61,15 +62,27 @@ def get_serialized_snippets(snippets: List[Snippet]) -> List[Dict[str, Any]]:
 
 
 @user_router.get('/{user_id}/snippets', response_model=List[SnippetOutput], tags=['snippets'])
-async def get_user_snippets(user: User = Depends(get_db_user)):
-    snippets = await Snippet.filter(user_id=user.id).prefetch_related('language', 'style')
-    return get_serialized_snippets(snippets)
+async def get_user_snippets(
+        request: Request,
+        response: Response,
+        user: User = Depends(get_db_user),
+        pagination: Pagination = Depends()
+):
+    filters = {'user_id': user.id}
+    to_prefetch = ['language', 'style']
+    snippets = await prepare_response(
+        request, response, Snippet, pagination.page, pagination.page_size, filters, to_prefetch
+    )
+    return get_serialized_snippets(cast(List[Snippet], snippets))
 
 
 @router.get('/', response_model=List[SnippetOutput])
-async def get_snippets():
-    snippets = await Snippet.all().prefetch_related('language', 'style')
-    return get_serialized_snippets(snippets)
+async def get_snippets(request: Request, response: Response, pagination: Pagination = Depends()):
+    to_prefetch = ['language', 'style']
+    snippets = await prepare_response(
+        request, response, Snippet, pagination.page, pagination.page_size, to_prefetch=to_prefetch
+    )
+    return get_serialized_snippets(cast(List[Snippet], snippets))
 
 
 @router.get(

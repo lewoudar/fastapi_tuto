@@ -1,5 +1,6 @@
 from typing import Dict
 
+import httpx
 import pydantic
 
 from pastebin.snippets.models import Snippet, Language, Style
@@ -43,3 +44,43 @@ async def create_snippet(
         print_line_number=print_line_number,
         user=user
     )
+
+
+def assert_invalid_pagination_type_response(response: httpx.Response) -> None:
+    assert 422 == response.status_code
+    assert response.json() == {
+        'detail': [
+            {
+                'loc': ['query', 'page'],
+                'msg': 'value is not a valid integer',
+                'type': 'type_error.integer'
+            },
+            {
+                'loc': ['query', 'page_size'],
+                'msg': 'value is not a valid integer',
+                'type': 'type_error.integer'
+            }
+        ]
+    }
+
+
+def assert_invalid_pagination_value_response(
+        response: httpx.Response, message: str, error_type: str, context_value: int
+) -> None:
+    assert 422 == response.status_code
+    assert response.json() == {
+        'detail': [
+            {
+                'loc': ['query', 'page'],
+                'msg': 'ensure this value is greater than or equal to 1',
+                'type': 'value_error.number.not_ge',
+                'ctx': {'limit_value': 1}
+            },
+            {
+                'loc': ['query', 'page_size'],
+                'msg': message,
+                'type': error_type,
+                'ctx': {'limit_value': context_value}
+            }
+        ]
+    }

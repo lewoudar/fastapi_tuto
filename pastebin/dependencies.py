@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import HTTPException, Path
+from fastapi import HTTPException, Path, Query
 
 from .snippets.models import Snippet
 from .users.models import User
@@ -25,3 +25,13 @@ async def get_db_snippet(
 
     await snippet.fetch_related('language', 'style')
     return snippet
+
+
+class Pagination:
+    def __init__(
+            self,
+            page: int = Query(1, description='number of the page to fetch', ge=1),
+            page_size: int = Query(50, description='number of items per page', gt=0, le=100)
+    ):
+        self.page = page
+        self.page_size = page_size

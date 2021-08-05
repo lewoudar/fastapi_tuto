@@ -1,13 +1,15 @@
 from pathlib import Path
 from typing import List
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response, Depends
 from fastapi.responses import ORJSONResponse
 from fastapi.staticfiles import StaticFiles
 from tortoise import Tortoise
 
 from .config import TORTOISE_ORM
+from .dependencies import Pagination
 from .exceptions import exception_handlers
+from .helpers import prepare_response
 from .schemas import LanguageSchema, StyleSchema
 from .snippets.models import Language, Style
 from .snippets.views import router as snippet_router
@@ -39,10 +41,10 @@ app.mount('/static', StaticFiles(directory=f'{static_dir}'), name='static')
 
 
 @app.get('/languages', response_model=List[LanguageSchema], tags=['display'])
-async def get_languages():
-    return await Language.all()
+async def get_languages(request: Request, response: Response, pagination: Pagination = Depends()):
+    return await prepare_response(request, response, Language, pagination.page, pagination.page_size)
 
 
 @app.get('/styles', response_model=List[StyleSchema], tags=['display'])
-async def get_styles():
-    return await Style.all()
+async def get_styles(request: Request, response: Response, pagination: Pagination = Depends()):
+    return await prepare_response(request, response, Style, pagination.page, pagination.page_size)
