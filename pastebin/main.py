@@ -1,18 +1,20 @@
 from pathlib import Path
 from typing import List
 
-from fastapi import FastAPI, Request, Response, Depends
+from fastapi import FastAPI, Request, Response, Depends, HTTPException
 from fastapi.responses import ORJSONResponse
+from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
 from tortoise import Tortoise
 
 from .config import TORTOISE_ORM, PAGINATION_HEADERS
 from .dependencies import Pagination
 from .exceptions import exception_handlers
-from .helpers import prepare_response
-from .schemas import LanguageSchema, StyleSchema
+from .helpers import prepare_response, create_access_token
+from .schemas import LanguageSchema, StyleSchema, Token, HttpError
 from .snippets.models import Language, Style
 from .snippets.views import router as snippet_router
+from .users.models import User
 from .users.views import router as user_router
 
 
@@ -66,3 +68,39 @@ async def get_languages(request: Request, response: Response, pagination: Pagina
 )
 async def get_styles(request: Request, response: Response, pagination: Pagination = Depends()):
     return await prepare_response(request, response, Style, pagination.page, pagination.page_size)
+
+
+@app.post(
+    '/token',
+    response_model=Token,
+    summary='Get an access token',
+    tags=['auth'],
+    responses={
+        401: {
+            'description': 'Invalid username or password',
+            'model': HttpError,
+            'headers': {
+                'WWW-Authenticate': {
+                    'schema': {
+                        'type': 'string',
+                        'example': 'Bearer'
+                    },
+                    'description': 'Specify the type of authentication'
+                }
+            }
+        }
+    }
+)
+async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    auth_exception = HTTPException(
+        status_code=401, detail='Invalid username or password', headers={'WWW-Authenticate': 'Bearer'},
+    )
+    user = await User.filter(pseudo=form_data.username).get_or_none()
+    if user is None:
+        raise auth_exception
+
+    if not user.check_password(form_data.password):
+        raise auth_exception
+
+    token = create_access_token({'sub': form_data.username})
+    return {'access_token': token, 'token_type': 'bearer'}

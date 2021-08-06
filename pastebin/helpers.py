@@ -1,7 +1,11 @@
-from typing import Dict, List, Any, Sequence, Type
+from datetime import datetime, timedelta
+from typing import Dict, List, Any, Sequence, Type, Union
 
 from fastapi import Response, Request
+from jose import jwt
 from tortoise import Model
+
+from .config import settings
 
 
 async def prepare_response(
@@ -30,3 +34,10 @@ async def prepare_response(
         response.headers[next_page] = str(request.url.include_query_params(page=page + 1, page_size=page_size))
 
     return models
+
+
+def create_access_token(data: Dict[str, Union[str, datetime]]) -> str:
+    to_encode = data.copy()
+    expire_time = datetime.utcnow() + timedelta(seconds=settings.jwt_token_expire_seconds)
+    to_encode.update({'exp': expire_time})
+    return jwt.encode(to_encode, settings.secret_key, algorithm=settings.jwt_algorithm)

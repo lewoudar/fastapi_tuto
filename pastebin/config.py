@@ -1,3 +1,4 @@
+import secrets
 from pathlib import Path
 from typing import Union
 
@@ -29,6 +30,9 @@ class SqliteDsn(str):
 
 class Settings(BaseSettings):
     db_url: Union[SqliteDsn, MysqlDsn, PostgresDsn] = 'sqlite://pastebin.db'
+    secret_key: str = secrets.token_urlsafe(32)
+    jwt_algorithm: str = 'HS256'
+    jwt_token_expire_seconds: int = 30 * 60
 
 
 settings = Settings()
