@@ -62,17 +62,19 @@ async def test_returns_422_error_when_user_id_is_not_a_uuid(client, auth_header)
     assert message == response.json()
 
 
-async def test_should_return_409_error_when_pseudo_already_exists(client):
+async def test_should_return_409_error_when_pseudo_already_exists(client, auth_header):
     user_id = await create_user(client)
-    response = await client.patch(f'/users/{user_id}', json={'pseudo': 'Bob'})
+    response = await client.patch(f'/users/{user_id}', json={'pseudo': 'Bob'}, headers=auth_header)  # type: ignore
 
     assert 409 == response.status_code
     assert {'detail': 'A user with pseudo Bob already exists'} == response.json()
 
 
-async def test_should_return_409_error_when_email_already_exists(client):
+async def test_should_return_409_error_when_email_already_exists(client, auth_header):
     user_id = await create_user(client)
-    response = await client.patch(f'/users/{user_id}', json={'email': 'bob@foo.com'})
+    response = await client.patch(
+        f'/users/{user_id}', json={'email': 'bob@foo.com'}, headers=auth_header  # type: ignore
+    )
 
     assert 409 == response.status_code
     assert {'detail': 'A user with email bob@foo.com already exists'} == response.json()

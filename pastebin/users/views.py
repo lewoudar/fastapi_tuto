@@ -122,5 +122,5 @@ async def update_user(
         }
     }
 )
-async def delete_user(user: User = Depends(get_db_user)):
+async def delete_user(user: User = Depends(get_authenticated_user)):
     await user.delete()
