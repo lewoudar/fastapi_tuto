@@ -1,4 +1,5 @@
 import uuid
+from typing import Dict
 
 import httpx
 import pytest
@@ -22,6 +23,10 @@ async def create_users(default_user_id: str) -> None:
     user_2 = User(firstname='Bobby', lastname='Fish', pseudo='fisher', email='fisher@foo.com')
     user_2.set_password('foo')
     await user_2.save()
+    # admin user
+    user = User(firstname='admin', lastname='admin', pseudo='admin', email='admin@admin.com', is_admin=True)
+    user.set_password('admin')
+    await user.save()
 
 
 async def create_languages() -> None:
@@ -62,6 +67,13 @@ async def client(default_user_id) -> httpx.AsyncClient:
     async with httpx.AsyncClient(app=app, base_url='http://testserver') as test_client:
         yield test_client
     await Tortoise.close_connections()
+
+
+@pytest.fixture()
+async def auth_header(client) -> Dict[str, str]:
+    response = await client.post('/token', data={'username': 'Bob', 'password': 'hell'})
+    token = response.json()['access_token']
+    return {'Authorization': f'Bearer {token}'}
 
 
 @pytest.fixture(scope='session')

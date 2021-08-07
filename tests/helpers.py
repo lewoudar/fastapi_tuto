@@ -84,3 +84,20 @@ def assert_invalid_pagination_value_response(
             }
         ]
     }
+
+
+async def create_user(client: httpx.AsyncClient) -> str:
+    payload = {
+        'firstname': 'Pablo',
+        'lastname': 'Escobar',
+        'pseudo': 'escobar',
+        'email': 'escobar@drug.com',
+        'password': 'leaf'
+    }
+    response = await client.post('/users/', json=payload)
+    return response.json()['id']
+
+
+async def get_authorization_header(client: httpx.AsyncClient, username: str, password: str) -> Dict[str, str]:
+    response = await client.post('/token', data={'username': username, 'password': password})
+    return {'Authorization': f'Bearer {response.json()["access_token"]}'}

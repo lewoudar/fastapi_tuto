@@ -3,7 +3,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from pastebin.config import PAGINATION_HEADERS
-from pastebin.dependencies import get_db_user, Pagination
+from pastebin.dependencies import get_db_user, get_authenticated_user, Pagination
 from pastebin.helpers import prepare_response
 from pastebin.schemas import HttpError
 from .models import User
@@ -94,7 +94,10 @@ async def check_update_user_integrity(user_input: UserUpdate) -> UserUpdate:
         }
     }
 )
-async def update_user(user: UserUpdate = Depends(check_update_user_integrity), db_user: User = Depends(get_db_user)):
+async def update_user(
+        user: UserUpdate = Depends(check_update_user_integrity),
+        db_user: User = Depends(get_authenticated_user)
+):
     user_dict = user.dict(exclude_unset=True)
     if 'password' in user_dict:
         db_user.set_password(user_dict.pop('password'))

@@ -1,36 +1,53 @@
 import uuid
 
-import httpx
 import pytest
 
+from pastebin.helpers import create_access_token
 from pastebin.users.models import User
-from tests.helpers import is_valid_user
+from tests.helpers import is_valid_user, get_authorization_header, create_user
 
 pytestmark = pytest.mark.anyio
 
 
-async def create_user(client: httpx.AsyncClient) -> str:
-    payload = {
-        'firstname': 'Pablo',
-        'lastname': 'Escobar',
-        'pseudo': 'escobar',
-        'email': 'escobar@drug.com',
-        'password': 'leaf'
-    }
-    response = await client.post('/users/', json=payload)
-    return response.json()['id']
+async def test_should_return_401_error_when_user_is_not_authenticated(client):
+    response = await client.patch(f'/users/{uuid.uuid4()}')
+
+    assert 401 == response.status_code
+    assert {'detail': 'Not authenticated'} == response.json()
+    assert 'Bearer' == response.headers['www-authenticate']
 
 
-async def test_should_return_404_error_when_user_id_is_unknown(client):
+@pytest.mark.parametrize('token_data', [
+    {'foo': 'bar'},  # unknown claim
+    {'sub': 'foo'}  # unknown user pseudo
+])
+async def test_should_return_401_error_when_token_is_not_valid(client, default_user_id, token_data):
+    auth_header = {'Authorization': f'Bearer {create_access_token(token_data)}'}
+    response = await client.patch(f'/users/{default_user_id}', headers=auth_header)
+
+    assert 401 == response.status_code
+    assert {'detail': 'Could not validate credentials'} == response.json()
+    assert 'Bearer' == response.headers['www-authenticate']
+
+
+async def test_should_return_403_error_when_user_is_not_allowed_to_access_resource(client, auth_header):
+    user_id = await create_user(client)
+    response = await client.patch(f'/users/{user_id}', headers=auth_header)  # type: ignore
+
+    assert 403 == response.status_code
+    assert {'detail': 'Access denied for the resource'} == response.json()
+
+
+async def test_should_return_404_error_when_user_id_is_unknown(client, auth_header):
     user_id = uuid.uuid4()
-    response = await client.patch(f'/users/{user_id}', json={})
+    response = await client.patch(f'/users/{user_id}', headers=auth_header)  # type: ignore
 
     assert 404 == response.status_code
     assert {'detail': f'no user with id {user_id} found'} == response.json()
 
 
-async def test_returns_422_error_when_user_id_is_not_a_uuid(client):
-    response = await client.patch('/users/43', json={})
+async def test_returns_422_error_when_user_id_is_not_a_uuid(client, auth_header):
+    response = await client.patch('/users/43', json={}, headers=auth_header)  # type: ignore
 
     assert 422 == response.status_code
     message = {
@@ -61,7 +78,7 @@ async def test_should_return_409_error_when_email_already_exists(client):
     assert {'detail': 'A user with email bob@foo.com already exists'} == response.json()
 
 
-async def test_returns_422_error_when_field_does_not_have_the_correct_type(client, default_user_id):
+async def test_returns_422_error_when_field_does_not_have_the_correct_type(client, default_user_id, auth_header):
     payload = {
         'firstname': 42,
         'lastname': 42,
@@ -69,7 +86,7 @@ async def test_returns_422_error_when_field_does_not_have_the_correct_type(clien
         'email': 'hello@bar.com',
         'password': 42
     }
-    response = await client.patch(f'/users/{default_user_id}', json=payload)
+    response = await client.patch(f'/users/{default_user_id}', json=payload, headers=auth_header)  # type: ignore
 
     assert 422 == response.status_code
     fields = ['firstname', 'lastname', 'pseudo', 'password']
@@ -77,7 +94,7 @@ async def test_returns_422_error_when_field_does_not_have_the_correct_type(clien
     assert {'detail': errors} == response.json()
 
 
-async def test_returns_422_error_when_field_does_not_have_the_correct_length(client, default_user_id):
+async def test_returns_422_error_when_field_does_not_have_the_correct_length(client, default_user_id, auth_header):
     payload = {
         'firstname': '',
         'lastname': 'B',
@@ -85,7 +102,7 @@ async def test_returns_422_error_when_field_does_not_have_the_correct_length(cli
         'email': 'foo@bar.com',
         'password': ''
     }
-    response = await client.patch(f'/users/{default_user_id}', json=payload)
+    response = await client.patch(f'/users/{default_user_id}', json=payload, headers=auth_header)  # type: ignore
 
     assert 422 == response.status_code
     errors = []
@@ -98,13 +115,13 @@ async def test_returns_422_error_when_field_does_not_have_the_correct_length(cli
     assert {'detail': errors} == response.json()
 
 
-async def test_should_return_422_error_when_payload_is_incorrect(client, default_user_id):
+async def test_should_return_422_error_when_payload_is_incorrect(client, default_user_id, auth_header):
     payload = {
         'firstname': 43,  # not a string
         'lastname': 'bar',
         'email': 'foo'  # not a valid email
     }
-    response = await client.patch(f'/users/{default_user_id}', json=payload)
+    response = await client.patch(f'/users/{default_user_id}', json=payload, headers=auth_header)  # type: ignore
 
     assert 422 == response.status_code
     message = {
@@ -124,14 +141,19 @@ async def test_should_return_422_error_when_payload_is_incorrect(client, default
     assert message == response.json()
 
 
-async def test_should_update_and_return_user_when_given_correct_payload_without_password(client):
+@pytest.mark.parametrize(('username', 'password'), [
+    ('escobar', 'leaf'),  # owner user
+    ('admin', 'admin')  # admin user
+])
+async def test_should_update_and_return_user_when_given_correct_payload_without_password(client, username, password):
     user_id = await create_user(client)
     payload = {
         'firstname': 'Santos',
         'lastname': 'Phoenix',
         'pseudo': 'phoenix'
     }
-    response = await client.patch(f'/users/{user_id}', json=payload)
+    auth_header = await get_authorization_header(client, username, password)
+    response = await client.patch(f'/users/{user_id}', json=payload, headers=auth_header)
     assert 200 == response.status_code
 
     user = await User.filter(pk=user_id).get_or_none()
@@ -149,7 +171,8 @@ async def test_should_update_and_return_user_when_given_correct_payload_with_pas
         'email': 'phoenix@foo.com',
         'password': 'phoenix'
     }
-    response = await client.patch(f'/users/{user_id}', json=payload)
+    auth_header = await get_authorization_header(client, 'escobar', 'leaf')
+    response = await client.patch(f'/users/{user_id}', json=payload, headers=auth_header)
     assert 200 == response.status_code
 
     user = await User.filter(pk=user_id).get_or_none()
