@@ -37,7 +37,8 @@ class TestGetListOfUsers:
     @pytest.mark.parametrize(('previous_url', 'next_url', 'page', 'page_size', 'data_length'), [
         ('', 'http://testserver/users/?page=2&page_size=1', 1, 1, 1),
         ('http://testserver/users/?page=1&page_size=1', 'http://testserver/users/?page=3&page_size=1', 2, 1, 1),
-        ('http://testserver/users/?page=2&page_size=1', '', 3, 1, 0)
+        ('http://testserver/users/?page=2&page_size=1', 'http://testserver/users/?page=4&page_size=1', 3, 1, 1),
+        ('http://testserver/users/?page=3&page_size=1', '', 4, 1, 0)
     ])
     async def test_return_list_of_users_with_pagination(
             self, client, previous_url, next_url, page, page_size, data_length
