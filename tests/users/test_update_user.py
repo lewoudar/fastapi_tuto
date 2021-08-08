@@ -167,13 +167,17 @@ async def test_should_update_and_return_user_when_given_correct_payload_without_
     assert is_valid_user(response.json())
 
 
-async def test_should_update_and_return_user_when_given_correct_payload_with_password(client):
+@pytest.mark.parametrize(('username', 'password'), [
+    ('escobar', 'leaf'),  # owner user
+    ('admin', 'admin')  # admin user
+])
+async def test_should_update_and_return_user_when_given_correct_payload_with_password(client, username, password):
     user_id = await create_user(client)
     payload = {
         'email': 'phoenix@foo.com',
         'password': 'phoenix'
     }
-    auth_header = await get_authorization_header(client, 'escobar', 'leaf')
+    auth_header = await get_authorization_header(client, username, password)
     response = await client.patch(f'/users/{user_id}', json=payload, headers=auth_header)
     assert 200 == response.status_code
 

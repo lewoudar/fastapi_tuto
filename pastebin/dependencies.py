@@ -21,7 +21,7 @@ async def get_db_user(
     return user
 
 
-async def get_authenticated_user(token: str = Depends(oauth2_scheme), user: User = Depends(get_db_user)) -> User:
+async def parse_authenticated_user(token: str) -> User:
     auth_exception = HTTPException(401, detail='Could not validate credentials', headers={'WWW-Authenticate': 'Bearer'})
     try:
         data = jwt.decode(token, settings.secret_key, algorithms=[settings.jwt_algorithm])
@@ -36,7 +36,12 @@ async def get_authenticated_user(token: str = Depends(oauth2_scheme), user: User
     if auth_user is None:
         raise auth_exception
 
-    if username != user.pseudo and not auth_user.is_admin:
+    return auth_user
+
+
+async def get_authenticated_user(token: str = Depends(oauth2_scheme), user: User = Depends(get_db_user)) -> User:
+    authenticated_user = await parse_authenticated_user(token)
+    if authenticated_user.pseudo != user.pseudo and not authenticated_user.is_admin:
         raise HTTPException(403, detail='Access denied for the resource')
 
     return user
@@ -49,7 +54,15 @@ async def get_db_snippet(
     if snippet is None:
         raise HTTPException(status_code=404, detail=f'no snippet with id {snippet_id} found')
 
-    await snippet.fetch_related('language', 'style')
+    await snippet.fetch_related('language', 'style', 'user')
+    return snippet
+
+
+async def get_authenticated_snippet(token: str = Depends(oauth2_scheme), snippet: Snippet = Depends(get_db_snippet)):
+    authenticated_user = await parse_authenticated_user(token)
+    if authenticated_user != snippet.user and not authenticated_user.is_admin:
+        raise HTTPException(403, detail='Access denied for the resource')
+
     return snippet
 
 

@@ -9,7 +9,9 @@ from pygments.lexers import get_lexer_by_name
 
 from pastebin.config import PAGINATION_HEADERS
 from pastebin.config import templates
-from pastebin.dependencies import get_db_user, get_db_snippet, Pagination
+from pastebin.dependencies import (
+    get_db_user, get_db_snippet, get_authenticated_user, get_authenticated_snippet, Pagination
+)
 from pastebin.exceptions import SnippetError
 from pastebin.schemas import HttpError
 from pastebin.users.models import User
@@ -34,7 +36,7 @@ def get_snippet_info_to_display(snippet: Snippet) -> Dict[str, Any]:
 
 
 @user_router.post('/{user_id}/snippets', tags=['snippets'], status_code=201, response_model=SnippetOutput)
-async def create_snippet(snippet: SnippetCreate, user: User = Depends(get_db_user)):
+async def create_snippet(snippet: SnippetCreate, user: User = Depends(get_authenticated_user)):
     errors: List[Dict[str, str]] = []
     language = await Language.filter(name__iexact=snippet.language).get_or_none()
     if language is None:
@@ -136,7 +138,11 @@ async def get_highlighted_snippet(request: Request, snippet: Snippet = Depends(g
         }
     }
 )
-async def update_snippet(snippet: SnippetUpdate, db_snippet: Snippet = Depends(get_db_snippet)):
+async def update_snippet(snippet: SnippetUpdate, db_snippet: Snippet = Depends(get_authenticated_snippet)):
+    """
+    Updates snippet information either partially or completely.
+    The update can only be done by the snippet owner or an admin user.
+    """
     errors: List[Dict[str, str]] = []
     snippet_dict = snippet.dict(exclude_unset=True)
     if snippet.language is not None:
@@ -176,5 +182,8 @@ async def update_snippet(snippet: SnippetUpdate, db_snippet: Snippet = Depends(g
         }
     }
 )
-async def delete_snippet(snippet: Snippet = Depends(get_db_snippet)):
+async def delete_snippet(snippet: Snippet = Depends(get_authenticated_snippet)):
+    """
+    Deletes a snippet. The deletion can only be done by the snippet owner or an admin user.
+    """
     await snippet.delete()
