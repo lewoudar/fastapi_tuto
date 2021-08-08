@@ -57,7 +57,7 @@ PAGINATION_HEADERS = {
             },
             'description': (
                 'The url where to find previous items relative to the current data set. An empty value means there is'
-                'no previous item.'
+                ' no previous item.'
             )
         },
         'X-Next-Page': {
@@ -68,7 +68,7 @@ PAGINATION_HEADERS = {
             },
             'description': (
                 'The url where to find previous items relative to the current data set. An empty value means there is'
-                'no next item.'
+                ' no next item.'
             )
         }
     }
