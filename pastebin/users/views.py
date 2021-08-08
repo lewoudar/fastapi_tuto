@@ -82,7 +82,6 @@ async def check_update_user_integrity(user_input: UserUpdate) -> UserUpdate:
 @router.patch(
     '/{user_id}',
     response_model=UserOutput,
-    description='Updates user information either partially or completely',
     responses={
         404: {
             'description': 'User not found',
@@ -98,6 +97,10 @@ async def update_user(
         user: UserUpdate = Depends(check_update_user_integrity),
         db_user: User = Depends(get_authenticated_user)
 ):
+    """
+    Updates user information either partially or completely.
+    The update can only be done by the concerned user or an admin user.
+    """
     user_dict = user.dict(exclude_unset=True)
     if 'password' in user_dict:
         db_user.set_password(user_dict.pop('password'))
@@ -113,7 +116,6 @@ async def update_user(
     '/{user_id}',
     status_code=204,
     response_class=Response,
-    description='Deletes a user',
     response_description='User deleted',
     responses={
         404: {
@@ -123,4 +125,7 @@ async def update_user(
     }
 )
 async def delete_user(user: User = Depends(get_authenticated_user)):
+    """
+    Deletes a user. The deletion can only be done by the concerned user or an admin user.
+    """
     await user.delete()
