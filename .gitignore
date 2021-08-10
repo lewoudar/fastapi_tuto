@@ -10,6 +10,7 @@ pastebin.db
 __pycache__
 *.pyc
 *.egg-info
+*.mo
 
 # packaging / distribution
 site

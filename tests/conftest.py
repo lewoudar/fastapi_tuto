@@ -56,8 +56,9 @@ async def create_models(default_user_id: str) -> None:
 
 @pytest.fixture()
 async def client(default_user_id) -> httpx.AsyncClient:
-    # Hum... it seems like the startup events are not taken in account, at least for Tortoise
-    # so it is necessary to initialize the test database here
+    # HTTPX does not support the lifespan agsi protocol so on_startup/on_shutdown callbacks can't be run automatically
+    # we need to run them manually here
+    # TODO: seems like what I do here does not really work as expected
     await Tortoise.init(
         db_url='sqlite://:memory:',
         modules={'pastebin': ['pastebin.users.models', 'pastebin.snippets.models']}

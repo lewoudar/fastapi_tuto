@@ -3,6 +3,7 @@ from typing import Dict, List, Any, Sequence, Type, Union
 
 from fastapi import Response, Request
 from jose import jwt
+from starlette_i18n import load_gettext_translations
 from tortoise import Model
 
 from .config import settings
@@ -41,3 +42,12 @@ def create_access_token(data: Dict[str, Union[str, datetime]]) -> str:
     expire_time = datetime.utcnow() + timedelta(seconds=settings.jwt_token_expire_seconds)
     to_encode.update({'exp': expire_time})
     return jwt.encode(to_encode, settings.secret_key, algorithm=settings.jwt_algorithm)
+
+
+class SetupTranslations:
+    def __init__(self, locales_dir: str = 'locales', domain: str = 'messages'):
+        self.babel_dir = locales_dir
+        self.domain = domain
+
+    def __call__(self):
+        load_gettext_translations(self.babel_dir, self.domain)

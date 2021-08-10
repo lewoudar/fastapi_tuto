@@ -2,15 +2,16 @@ from pathlib import Path
 from typing import List
 
 from fastapi import FastAPI, Request, Response, Depends, HTTPException
-from fastapi.responses import ORJSONResponse
+from fastapi.responses import ORJSONResponse, HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
+from starlette_i18n import get_locale
 from tortoise import Tortoise
 
-from .config import TORTOISE_ORM, PAGINATION_HEADERS
-from .dependencies import Pagination
+from .config import TORTOISE_ORM, PAGINATION_HEADERS, templates
+from .dependencies import Pagination, set_language
 from .exceptions import exception_handlers
-from .helpers import prepare_response, create_access_token
+from .helpers import prepare_response, create_access_token, SetupTranslations
 from .schemas import LanguageSchema, StyleSchema, Token, HttpError
 from .snippets.models import Language, Style
 from .snippets.views import router as snippet_router
@@ -29,6 +30,8 @@ async def close_tortoise():
     await Tortoise.close_connections()
 
 
+current_dir = Path(__file__).parent
+locales_dir = current_dir / 'locales'
 app = FastAPI(
     title='Pastebin API',
     description='This api allows users to create code snippets and share them',
@@ -40,13 +43,13 @@ app = FastAPI(
     redoc_url=None,
     default_response_class=ORJSONResponse,
     exception_handlers=exception_handlers,
-    on_startup=[init_tortoise],
+    on_startup=[init_tortoise, SetupTranslations(locales_dir=f'{locales_dir}')],
     on_shutdown=[close_tortoise]
 )
 app.include_router(user_router)
 app.include_router(snippet_router)
 
-static_dir = Path(__file__).parent / 'static'
+static_dir = current_dir / 'static'
 app.mount('/static', StaticFiles(directory=f'{static_dir}'), name='static')
 
 
@@ -104,3 +107,16 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 
     token = create_access_token({'sub': form_data.username})
     return {'access_token': token, 'token_type': 'bearer'}
+
+
+@app.get(
+    '/internationalization',
+    response_class=HTMLResponse,
+    description='A dummy html content to test internationalization with FastAPI',
+    summary='Tests i18n with FastAPI',
+    dependencies=[Depends(set_language)]
+)
+async def about(request: Request):
+    context = {'request': request, 'locale': get_locale()}
+    templates.env.install_gettext_translations(get_locale().translations)  # type: ignore
+    return templates.TemplateResponse('i18n.jinja2', context)

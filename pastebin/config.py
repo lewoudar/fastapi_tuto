@@ -76,3 +76,4 @@ PAGINATION_HEADERS = {
 
 templates_dir = Path(__file__).parent / 'templates'
 templates = Jinja2Templates(directory=f'{templates_dir}')
+templates.env.add_extension('jinja2.ext.i18n')

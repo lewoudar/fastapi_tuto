@@ -1,8 +1,11 @@
 import uuid
+from typing import List, Tuple
 
-from fastapi import HTTPException, Path, Query, Depends
+from fastapi import HTTPException, Path, Query, Depends, Header
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt
+from starlette_i18n import set_locale
+from starlette_i18n.locale import gettext_translations
 
 from .config import settings
 from .snippets.models import Snippet
@@ -74,3 +77,36 @@ class Pagination:
     ):
         self.page = page
         self.page_size = page_size
+
+
+def parse_accept_language(value: str) -> List[Tuple[str, str]]:
+    """
+    Helper function to parse Accept-Language header.
+    Given an input like "da, en-gb;q=0.8, en;q=0.7", you will have an output like
+    [('fr', '1'), ('en-gb', '0.8'), ('en', '0.7')]
+    """
+    accepted_languages = []
+    languages = value.split(',')
+    for language in languages:
+        language = language.strip()
+        parts = language.split(';')
+        # there is no weight associated to the language
+        if parts[0] == language:
+            accepted_languages.append((language, '1'))
+        else:
+            _, weight = parts[1].strip().split('=')
+            accepted_languages.append((parts[0].strip().replace('-', '_'), weight))
+
+    return accepted_languages
+
+
+async def set_language(accept_language: str = Header('en')) -> None:
+    locale_found = False
+    for language, _ in parse_accept_language(accept_language):
+        if language in gettext_translations.supported_locales:
+            set_locale(language)
+            locale_found = True
+            break
+
+    if not locale_found:
+        set_locale('en')
